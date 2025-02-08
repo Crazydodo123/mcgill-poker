@@ -5,7 +5,6 @@ address=$2
 port=$3
 bot=$4
 room=$5
-party=$6
 
 cleanup() {
     # kill all processes whose parent is this process
