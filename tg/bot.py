@@ -10,6 +10,7 @@ class Bot:
     def act(self, state: types.PokerSharedState, hand: Tuple[types.Card, types.Card]) -> types.Action:
         raise NotImplementedError("Must override act")
     
+    
     @abstractmethod
     def opponent_action(self, action: types.Action, player: types.PokerPlayer):
         raise NotImplementedError("Must override opponent_action")
