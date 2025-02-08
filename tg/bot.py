@@ -22,14 +22,15 @@ class Bot:
     def start_game(self, my_id: str):
         raise NotImplementedError("Must override start_game")
 
-    def __init__(self, host: str, port: int, room: str):
+    def __init__(self, host: str, port: int, room: str, username: str):
         self.host = host
         self.port = port
         self.room = room
+        self.username = username
 
     async def start(self):
         async for ws in connect(f"ws://{self.host}:{str(self.port)}/parties/poker/{self.room}"):
-            await ws.send(json.dumps({'type': 'join-game'}))
+            await ws.send(json.dumps({'type': 'join-game', 'username': self.username}))
             async for message in ws:
                 try:
                     state = json.loads(message, object_hook=lambda d: SimpleNamespace(**util.decamilize(d)))
@@ -51,7 +52,7 @@ class Bot:
                             pass
                     if state.game_state is not None and state.hand is not None:
                         # only move if we are responding to an opponent action
-                        if state.game_state.whose_turn == state.client_id and should_act:
+                        if state.game_state.whose_turn == state.username and should_act:
                             try:
                                 action = self.act(state.game_state, state.hand)
                                 await ws.send(json.dumps({'type': 'action', 'action': util.camelize(action)}))

@@ -110,6 +110,7 @@ class ServerUpdateMessage:
 @dataclass
 class ServerStateMessage:
     client_id: str
+    username: str
     game_state: Optional[PokerSharedState] = None
     hand: Optional[Tuple[Card, Card]] = None
     in_game_players: List[PokerPlayer] = field(default_factory=list)
