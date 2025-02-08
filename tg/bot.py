@@ -5,28 +5,38 @@ from typing import Dict, Tuple
 from websockets.client import connect
 from . import types, util
 from abc import abstractmethod
+from time import sleep
+
 class Bot:
     @abstractmethod
     def act(self, state: types.PokerSharedState, hand: Tuple[types.Card, types.Card]) -> types.Action:
-        raise NotImplementedError("Must override act")
+        print('asked to act')
+        print('acting', state, hand, self.my_id)
+
+        sleep(0.9)
+        return { 'type': 'raise', 'amount': 100 }    
     
+
     @abstractmethod
     def opponent_action(self, action: types.Action, player: types.PokerPlayer):
-        raise NotImplementedError("Must override opponent_action")
+        print('opponent action?', action, player)
+        pass
+
 
     @abstractmethod
     def game_over(self, payouts: Dict[str, int]):
-        raise NotImplementedError("Must override game_over")
+        pass
 
     @abstractmethod
     def start_game(self, my_id: str):
-        raise NotImplementedError("Must override start_game")
+        pass
 
     def __init__(self, host: str, port: int, room: str, username: str):
         self.host = host
         self.port = port
         self.room = room
         self.username = username
+
 
     async def start(self):
         async for ws in connect(f"ws://{self.host}:{str(self.port)}/parties/poker/{self.room}"):

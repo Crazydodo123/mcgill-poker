@@ -103,5 +103,5 @@ class KellyCriterion(Bot):
 
 
 if __name__ == "__main__":
-    bot = KellyCriterion(args.host, args.port, args.room, args.username)
+    bot = KellyCriterion("ws.turingpoker.com", "80", args.room, args.username)
     asyncio.run(bot.start())
