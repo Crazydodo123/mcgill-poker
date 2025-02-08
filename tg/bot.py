@@ -8,20 +8,26 @@ from abc import abstractmethod
 class Bot:
     @abstractmethod
     def act(self, state: types.PokerSharedState, hand: Tuple[types.Card, types.Card]) -> types.Action:
-        raise NotImplementedError("Must override act")
-    
-    
+        print('asked to act')
+        print('acting', state, hand, self.my_id)
+        return {'type': 'call'}
+
     @abstractmethod
     def opponent_action(self, action: types.Action, player: types.PokerPlayer):
-        raise NotImplementedError("Must override opponent_action")
+        print('opponent action?', action, player)
+        pass
 
     @abstractmethod
     def game_over(self, payouts: Dict[str, int]):
-        raise NotImplementedError("Must override game_over")
+        global cnt
+        print('game over', payouts)
+        cnt += 1
+        print(cnt)
 
     @abstractmethod
     def start_game(self, my_id: str):
-        raise NotImplementedError("Must override start_game")
+        self.my_id = my_id
+        pass
 
     def __init__(self, host: str, port: int, room: str):
         self.host = host
