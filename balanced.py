@@ -23,6 +23,7 @@ parser.add_argument('--username', type=str, default='bot',
 args = parser.parse_args()
 
 
+
 def card_name(long):
     if long == "1":
         return 'A'
@@ -112,10 +113,10 @@ class TemplateBot(Bot):
 
 
     def act(self, state, hand):
-        sleep(5)
+        # sleep(5)
         # print(state)
         # print('asked to act')
-        # print('acting', state, hand, self.my_id)
+        print('acting', hand)
 
         # Get win probability
 
@@ -125,14 +126,49 @@ class TemplateBot(Bot):
         pot_size = state.pot
 
         if len(state.cards) == 0:
+            # anti troll measures
             print("preflop")
-
+            me = [p for p in state.players if p.id == args.username][0]
+            raise_amount = state.target_bet - me.current_bet
+            if raise_amount > state.big_blind * 7:
+                self.preflop_strategy = ['monster']
+                mi = self.get_income_rates(hand)
+                if raise_amount > 200 * state.big_blind:
+                    if mi > 1500:
+                        return {'type': 'raise','amount':200 * state.big_blind}
+                    else:
+                        return {'type': 'fold'}
+                if raise_amount > 100 * state.big_blind:
+                    if mi > 1300:
+                        return {'type': 'call'}
+                    else:
+                        return {'type': 'fold'}
+                if raise_amount > 75 * state.big_blind:
+                    if mi > 1000:
+                        return {'type': 'call'}
+                    else:
+                        return {'type': 'fold'}
+                if raise_amount > 40 * state.big_blind:
+                    if mi > 800:
+                        return {'type': 'call'}
+                    else:
+                        return {'type': 'fold'}
+                if raise_amount > 20 * state.big_blind:
+                    if mi > 400:
+                        return {'type': 'call'}
+                    else:
+                        return {'type': 'fold'}
+                if mi > 200:
+                    return {'type': 'call'}
+                else:
+                    return {'type': 'fold'}
+                    
+                
             h = self.get_income_rates(hand)
-
             if h == "R":
                 self.preflop_strategy.append("raise")
                 return {'type': 'raise', 'amount': state.target_bet * 2}
-            elif h >= "C":
+            elif h == "C":
                 self.preflop_strategy.append("call")
                 return {'type': 'call'}
             else:
@@ -149,8 +185,8 @@ class TemplateBot(Bot):
         elif k < 0.45 and k >= 0.25:
             print("CHECK")
             return self.should_check(state, k)
-
-        elif k >= 0.45 and k <= 0.65:
+        #CHANGE STATE POT THINGIE IF FUTURE GAME IS NOT 5000
+        elif k >= 0.45 and k <= 0.65 and state.pot < 1000:
             match self.is_flush_straight_draw(state, hand):
                 case 0:
                     print("CHECK")
@@ -162,7 +198,9 @@ class TemplateBot(Bot):
                     print("RAISE 2x POT")
                     return {'type': 'raise', 'amount' : pot_size*2-31}
 
-        #elif k >= 0.65 and k <= 0.85:
+        elif k >= 0.75:
+            print("RAISED 1/3x POT")
+            return {'type': 'raise', 'amount': pot_size / 3}
         else:
             print("CHECK")
             return self.should_check(state, k)
@@ -184,7 +222,7 @@ class TemplateBot(Bot):
 
         print("raise_amount", raise_amount / (state.pot + raise_amount))
 
-        if k >= min(raise_amount / (state.pot + raise_amount), 0.8):
+        if k >= min(raise_amount / (state.pot + raise_amount) * state.pot / 1500, 0.9):
             print("-> calling")
             return {'type': 'call'}
         else:
@@ -370,7 +408,23 @@ class TemplateBot(Bot):
                 ["C", "C", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R"],
                 ["C", "C", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R"]
             ]
-
+        elif self.preflop_strategy == ["monster"]:
+            print("using monster")
+            TemplateBot.income_rates = [
+                [-121, -440, -409, -382, -411, -432, -394, -357, -301, -259, -194, -116, 16 ],
+                [-271, -42,  -345, -312, -340, -358, -371, -328, -277, -231, -165, -87,  54 ],
+                [-245, -183,  52,  -246, -269, -287, -300, -308, -252, -204, -135, -55,  84 ],
+                [-219, -151, -91,   152, -200, -211, -227, -236, -227, -169, -104, -24,  118],
+                [-247, -177, -113, -52,   256, -145, -152, -158, -152, -145, -74,   9,   99 ],
+                [-261, -201, -129, -65,   3,    376, -76,  -79,  -68,  -66,  -44,  48,   148],
+                [-226, -204, -140, -73,  -2,    66,   503,  0,    15,   24,   45,  84,   194],
+                [-191, -166, -147, -79,  -5,    68,   138,  647,  104,  113,  136, 177,  241],
+                [-141, -116, -91,  -69,  -4,    75,   150,  235,  806,  226,  255, 295,  354],
+                [-89,  -67,  -41,  -12,   7,    82,   163,  248,  349,  965,  301, 348,  410],
+                [-29,  -3,    22,   51,   80,   108,  185,  274,  379,  423,  1141,403,  473],
+                [47,    76,   101,  128,  161,  199,  230,  318,  425,  473,  529, 1325, 541],
+                [175,   211,  237,  266,  249,  295,  338,  381,  491,  539,  594, 655, 1554]
+    ]
         else:
             print("using", self.preflop_strategy)
             TemplateBot.income_rates = [
@@ -403,5 +457,5 @@ class TemplateBot(Bot):
         
 
 if __name__ == "__main__":
-    bot = TemplateBot("ws.turingpoker.com", "80", args.room+"-timeout=1000-minPlayers=2-maxRounds=100-defaultStack=10000-bigBlind=10-smallBlind=5", args.username)
+    bot = TemplateBot("ws.turingpoker.com", "80", args.room+"-timeout=10000-minPlayers=2-maxRounds=1000-defaultStack=5000-bigBlind=10-smallBlind=5", args.username)
     asyncio.run(bot.start())

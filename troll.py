@@ -61,7 +61,7 @@ class Troll(Bot):
         cost_to_play = state.target_bet
         if isPush(hand):
             print("all innnn")
-            return {'type': 'raise', 'amount': 10000000}
+            return {'type': 'raise', 'amount': 1000}
         else:
             if cost_to_play == 0:
                 return {'type': 'check'}
@@ -79,5 +79,5 @@ class Troll(Bot):
         print('start game', my_id)
 
 if __name__ == "__main__":
-    bot = Troll("ws.turingpoker.com", "80", args.room, args.username)
+    bot = Troll("ws.turingpoker.com", "80", args.room+"-timeout=10000-minPlayers=2-maxRounds=1000-defaultStack=5000-bigBlind=10-smallBlind=5", args.username)
     asyncio.run(bot.start())
