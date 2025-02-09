@@ -23,8 +23,7 @@ class TemplateBot(Bot):
         print('asked to act')
         print('acting', state, hand, self.my_id)
 
-        time.sleep(2)
-        return { 'type': 'raise', 'amount': 100 }
+        return { 'type': 'raise', 'amount': 10 }
 
     def opponent_action(self, action, player):
         #print('opponent action?', action, player)
@@ -41,5 +40,5 @@ class TemplateBot(Bot):
         pass
 
 if __name__ == "__main__":
-    bot = TemplateBot("ws.turingpoker.com", "80", args.room, args.username)
+    bot = TemplateBot("ws.turingpoker.com", "80", args.room+"-timeout=1000-minPlayers=2-maxRounds=100-defaultStack=10000-bigBlind=10-smallBlind=5", args.username)
     asyncio.run(bot.start())
