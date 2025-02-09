@@ -22,7 +22,9 @@ parser.add_argument('--username', type=str, default='bot',
 
 args = parser.parse_args()
 
-
+def getMaxRaise(state, raise_size):
+    ma = min([p.stack for p in state.players])
+    return min(raise_size, ma)
 
 def card_name(long):
     if long == "1":
@@ -135,7 +137,7 @@ class TemplateBot(Bot):
                 mi = self.get_income_rates(hand)
                 if raise_amount > 200 * state.big_blind:
                     if mi > 1500:
-                        return {'type': 'raise','amount':200 * state.big_blind}
+                        return {'type': 'raise','amount':getMaxRaise(state, 200 * state.big_blind)}
                     else:
                         return {'type': 'fold'}
                 if raise_amount > 100 * state.big_blind:
@@ -167,7 +169,7 @@ class TemplateBot(Bot):
             h = self.get_income_rates(hand)
             if h == "R":
                 self.preflop_strategy.append("raise")
-                return {'type': 'raise', 'amount': state.target_bet * 2}
+                return {'type': 'raise', 'amount': getMaxRaise(state, state.target_bet * 2)}
             elif h == "C":
                 self.preflop_strategy.append("call")
                 return {'type': 'call'}
@@ -176,7 +178,7 @@ class TemplateBot(Bot):
 
         if k > 0.85 + state.pot / 2000 * 0.1:
             print("RAISED 2x POT")
-            return {'type': 'raise', 'amount': pot_size * 2}
+            return {'type': 'raise', 'amount': getMaxRaise(state, pot_size * 2)}
 
         elif k < 0.25:
             print("FOLD")
@@ -193,14 +195,14 @@ class TemplateBot(Bot):
                     return self.should_check(state, k)
                 case 1:
                     print("RAISE POT")
-                    return {'type': 'raise', 'amount' : pot_size+17}
+                    return {'type': 'raise', 'amount' : getMaxRaise(state, pot_size+17)}
                 case 2:
                     print("RAISE 2x POT")
-                    return {'type': 'raise', 'amount' : pot_size*2-31}
+                    return {'type': 'raise', 'amount' : getMaxRaise(state, pot_size*2-31)}
 
         elif k >= 0.75:
             print("RAISED 1/3x POT")
-            return {'type': 'raise', 'amount': pot_size / 3}
+            return {'type': 'raise', 'amount': getMaxRaise(state, pot_size / 3)}
         else:
             print("CHECK")
             return self.should_check(state, k)
@@ -457,5 +459,5 @@ class TemplateBot(Bot):
         
 
 if __name__ == "__main__":
-    bot = TemplateBot("ws.turingpoker.com", "80", args.room+"-timeout=10000-minPlayers=2-maxRounds=1000-defaultStack=5000-bigBlind=10-smallBlind=5", args.username)
+    bot = TemplateBot("ws.turingpoker.com", "80", args.room+"-timeout=1000-minPlayers=2-maxRounds=1000-defaultStack=5000-bigBlind=10-smallBlind=5", args.username)
     asyncio.run(bot.start())

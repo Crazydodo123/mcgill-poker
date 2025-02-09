@@ -40,6 +40,7 @@ def isFirst(card1, card2):
 
 
 def isPush(hand):
+    return True
     card1 = copy.deepcopy(hand[0])
     card2 = copy.deepcopy(hand[1])
     if not isFirst(hand[0], hand[1]):
