@@ -22,21 +22,6 @@ parser.add_argument('--username', type=str, default='bot',
 
 args = parser.parse_args()
 
-"""
-def card_name(card: pokerTypes.Card):
-    val = str(card.rank)
-    if card.rank == 1:
-        val = 'A'
-    if card.rank == 10:
-        val = 'T'
-    elif card.rank == 11:
-        val = 'J'
-    elif card.rank == 12:
-        val = 'Q'
-    elif card.rank == 13:
-        val = 'K'
-    return f"{val}{card.suit[0]}"
-"""
 
 def card_name(long):
     if long == "1":
@@ -93,27 +78,6 @@ class TemplateBot(Bot):
 
         # Get win probability
 
-        """
-        start_i = time.time()
-        prob = self.win_prob(state, hand, 16000)
-        print("prob 10")
-        print(prob)
-        print("time")
-        print(time.time() - start_i)
-        print("")
-        """
-
-        # Get whether hand with flop is a flush or straight draw
-        """
-        print(state)
-        print("")
-        print("")
-        print(self.is_flush_straight_draw(state, hand))
-        print("")
-        print("")
-        print(hand)
-        """
-
         # start_ii = time.time()
         k = self.p_hand_eval(state, hand)
 
@@ -122,42 +86,65 @@ class TemplateBot(Bot):
         if len(state.cards) == 0:
             h = self.get_income_rates(hand)
             if h >= 480:
-                return {'type': 'raise', 'amount': state.target_bet}
+                return {'type': 'raise', 'amount': state.target_bet * 2}
             elif h >= 175:
                 return {'type': 'raise', 'amount': state.target_bet}
             elif h >= 25:
-                return {'type': 'call'}
+                return self.should_check(state, k)
             else:
-                return {'type': 'fold'}
+                return self.cheap_fold(state)
 
         if k > 0.85:
-            print("RAISED 3x POT")
-            return {'type': 'raise', 'amount': pot_size*3}
+            print("RAISED 2x POT")
+            return {'type': 'raise', 'amount': pot_size * 2}
+
         elif k < 0.25:
             print("FOLD")
-            return {'type': 'fold'}
+            return self.should_check(state, k)
+
         elif k < 0.45 and k >= 0.25:
             print("CHECK")
-            return {'type': 'call'}
+            return self.should_check(state, k)
+
         elif k >= 0.45 and k <= 0.65:
-            if self.is_flush_straight_draw(state, hand) == 0:
-                print("CHECK")
-                return {'type': 'call'}
-            elif self.is_flush_straight_draw(state, hand) == 1:
-                print("RAISE POT")
-                return {'type': 'raise', 'amount' : pot_size+17}
-            elif self.is_flush_straight_draw(state, hand) == 2:
-                print("RAISE 2x POT")
-                return {'type': 'raise', 'amount' : pot_size*2-31}
+            match self.is_flush_straight_draw(state, hand):
+                case 0:
+                    print("CHECK")
+                    return self.should_check(state, k)
+                case 1:
+                    print("RAISE POT")
+                    return {'type': 'raise', 'amount' : pot_size+17}
+                case 2:
+                    print("RAISE 2x POT")
+                    return {'type': 'raise', 'amount' : pot_size*2-31}
+
         elif k >= 0.65 and k <= 0.85:
             print("CHECK")
+            return self.should_check(state, k)
+
+    def cheap_fold(self, state):
+        '''Fold if it costs more than zero to play. i.e.: folds every round'''
+        me = [p for p in state.players if p.id == args.username][0]
+
+        if state.target_bet - me.current_bet >= 10:
+            return { 'type': 'fold' }
+        else:
             return {'type': 'call'}
-        
 
-        # print("time:")
-        # print(time.time() - start_ii)
+    def should_check(self, state, k):
+        me = [p for p in state.players if p.id == args.username][0]
 
-        # return {'type': 'call'}
+        raise_amount = state.target_bet - me.current_bet
+
+
+        print("raise_amount", raise_amount / (state.pot + raise_amount))
+
+        if k >= raise_amount / (state.pot + raise_amount):
+            return {'type': 'call'}
+        else:
+            return {'type': 'fold'}
+
+
 
     def opponent_action(self, action, player):
         #print('opponent action?', action, player)
@@ -222,55 +209,11 @@ class TemplateBot(Bot):
         else:
             return 0
 
-    def win_prob(self, state: pokerTypes.PokerSharedState, hand: Tuple[pokerTypes.Card, pokerTypes.Card], simulations):
-        # simulations = 20000
-        out = 0
-        hand = [
-            treys.Card.new(card_name(hand[0])),
-            treys.Card.new(card_name(hand[1]))]
-        
-        board = [treys.Card.new(card_name(card)) for card in state.cards]
-        evaluator = treys.Evaluator()
-        for i in range(simulations):
-            deck = treys.Deck()
-            deck.shuffle()
-            for card in hand+board:
-                deck.cards.remove(card)
-            pred = board + deck.draw(5-len(board))
-            score = evaluator.evaluate(hand, pred)
-            other = 10**9
-
-            for player in state.players:
-                if player.id != self.my_id:
-                    other = min(other, evaluator.evaluate(deck.draw(2), pred))
-            if score < other:
-                out += 1
-        return out/simulations
-
-    # def hand_eval(self, state, hand):
-
-    #     if len(state.cards) < 3:
-    #         return 0
-
-    #     d = Deck()
-
-    #     hand = [d.get('7h'), d.get('9h')]
-    #     board = [d.get('8h'), d.get('6c'), d.get('4h')]
-
-    #     e = eval(hand, board)
-
-    #     # print("hand strength")
-    #     # print(e.hand_strength())
 
     def p_hand_eval(self, state, hand):
         
-        # print("state cards")
-        print(state.cards)
-        # print("hand cards")
-        print(hand)
-
-        # print(hand[0].rank)
-        # print(hand[1].rank)
+        # print(state.cards)
+        # print(hand)
 
         d = Deck()
         if len(state.cards) < 3:
@@ -315,5 +258,5 @@ class TemplateBot(Bot):
         
 
 if __name__ == "__main__":
-    bot = TemplateBot("ws.turingpoker.com", "80", args.room+"-timeout=1000-minPlayers=2-maxRounds=100-defaultStack=1000-bigBlind=10-smallBlind=5", args.username)
+    bot = TemplateBot("ws.turingpoker.com", "80", args.room+"-timeout=1000-minPlayers=2-maxRounds=100-defaultStack=10000-bigBlind=10-smallBlind=5", args.username)
     asyncio.run(bot.start())
