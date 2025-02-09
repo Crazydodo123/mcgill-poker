@@ -94,7 +94,7 @@ class TemplateBot(Bot):
             else:
                 return self.cheap_fold(state)
 
-        if k > 0.85:
+        if k > 0.85 + state.pot / 2000 * 0.1:
             print("RAISED 2x POT")
             return {'type': 'raise', 'amount': pot_size * 2}
 
@@ -118,7 +118,8 @@ class TemplateBot(Bot):
                     print("RAISE 2x POT")
                     return {'type': 'raise', 'amount' : pot_size*2-31}
 
-        elif k >= 0.65 and k <= 0.85:
+        #elif k >= 0.65 and k <= 0.85:
+        else:
             print("CHECK")
             return self.should_check(state, k)
 
